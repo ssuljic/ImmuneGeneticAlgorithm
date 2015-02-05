@@ -1,9 +1,0 @@
-See the following link for a demo: [ http://geneticoddity.appspot.com/ ]
-
-This is my half-arsed dodgy javascript implementation of the *hello world* of genetic algorithms.
-
-I developed this as a joke when somebody asks me to "prove" evolution works.
-
-It's the same algorithm I used on TypingMonkey --> [ http://github.com/JohnIdol/typingmonkey ]
-
-Note: I am using mutation in this example but it seems to be rather ininfluent.

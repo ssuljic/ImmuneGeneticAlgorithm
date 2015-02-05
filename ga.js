@@ -1,161 +1,159 @@
- // replace at prototype
- String.prototype.replaceAt=function(index, char) {
-	return this.substr(0, index) + char + this.substr(index+char.length);
- }
- 
- // global variables
- var validChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.'";
- var INITIAL_POP_SIZE = 2500;
- var MAX_GENERATIONS = 1000;
- var evolutionTarget = "No he wasn't.";
- var INDIVIDUAL_SIZE = evolutionTarget.length;
- var ELITE = INITIAL_POP_SIZE - INITIAL_POP_SIZE*20/100; //20%
- var MUTATION_RATE = 0.156;
- var MAX_RAND = 32767.00;
+String.prototype.replaceAt=function(index, char) {
+  return this.substr(0, index) + char + this.substr(index+char.length);
+}
 
- // evolve generation
- function evolve(currentGeneration, generationCounter){
- 	var fitnessScores = new Array();
-   	var tempGenerationHolder = new Array();
-   		
-   	// Inner loop: foreach candidate
-   	for(var g = 0; g < currentGeneration.length; g++){
-   		// evaluate each candidate --> simple string distance
-   		fitnessScores[g] = {fitness: levenshtein(evolutionTarget, currentGeneration[g]), chromosome: currentGeneration[g]};
-   	}
-   			
-   	// sort by fitness ascending (smaller distance == better fitness)
-   	fitnessScores.sort(function(a, b){
- 		return a.fitness - b.fitness;
-	});
-   		
-   	// printout best fit
-   	$("<div style='text-align: left;'>Best of <b>generation " + (generationCounter + 1) + "</b>: " + fitnessScores[0].chromosome + "</div>").hide().appendTo('#evolutionPlaceHolder').slideDown('slow');
-   	
-   	if(fitnessScores[0].fitness == 0){
-   		// if perfect match stop evolution
-   		$("<h1>" + fitnessScores[0].chromosome + "</h1>").hide().appendTo('#evolutionPlaceHolder').slideDown('slow');
-   	} 
-   	else if(generationCounter < MAX_GENERATIONS){
-   		// save best rules as elite population and shove into temp array for the new generation
-   		for(var e = 0; e < ELITE; e++) {
-   			tempGenerationHolder.push(fitnessScores[e].chromosome); 
-   		}
-   		
-   		// randomly select a mate (including elite) for all of the remaining ones
-   		// using double-point crossover should suffice for this silly problem
-   		// note: this should create INITIAL_POP_SIZE - ELITE new individualz
-   		for(var s = 0; s < INITIAL_POP_SIZE - ELITE; s++) {
-   			// generate random number between 0 and INITIAL_POP_SIZE - ELITE - 1
-   			var randInd = Math.floor(Math.random()*(INITIAL_POP_SIZE - ELITE));
-   		
-   			// mate the individual at index s with indivudal at random index
-   			var child = mate(fitnessScores[s].chromosome, fitnessScores[randInd].chromosome);
-   		
-   			// push the result in the new generation holder
-   			tempGenerationHolder.push(child);
-   		}
-   		
-   		// set current generation same as temp generation holder
-   		currentGeneration = tempGenerationHolder;
-   	
-   		// increase counter
-   		generationCounter++;
- 	
- 		// check stopping criteria and recurse
- 		setTimeout(function(){evolve(currentGeneration, generationCounter)},200);
- 	}
- }
- 
- // function to mate individuals
- function mate(individual1, individual2){
- 	// generate two random integers for the double point crossover
- 	var randomIndex1 = Math.floor(Math.random()*(INDIVIDUAL_SIZE));
- 	var randomIndex2 = Math.floor(Math.random()*(INDIVIDUAL_SIZE));
- 	
- 	var smaller;
- 	var bigger;
- 	
- 	if(randomIndex1 > randomIndex2){
- 		smaller = randomIndex2;
- 		bigger = randomIndex1;
- 	}
- 	else {
- 		smaller = randomIndex1;
- 		bigger = randomIndex2;
- 	}
- 	
- 	// substring each individual generating 3 segments for each
- 	var ind1_1 = individual1.substring(0,smaller);
- 	var ind1_3 = individual1.substring(bigger, INDIVIDUAL_SIZE);
- 	var ind2_2 = individual2.substring(smaller, bigger);
- 	
- 	// generate offspring
- 	var offspring = ind1_1 + ind2_2 + ind1_3;
- 	
- 	if(offspring.length != INDIVIDUAL_SIZE){
- 		alert('anomaly in offspring, lenght = ' + offspring.length + ' - ' + offspring);
- 	}
- 	
- 	// mutate the offspring by chance given MUTATION_RATE
-    if (Math.floor(Math.random()*(MAX_RAND + 1)) > MAX_RAND * MUTATION_RATE)
-    {
- 		offspring = mutate(offspring);
- 	}
- 	
- 	return offspring;
- }
- 
- // a function to implement mutation - this is pretty useless/disruptive if the string is too small
- function mutate(individual){
- 	// generate a random integer 
- 	var marker = Math.floor(Math.random()*(INDIVIDUAL_SIZE));
- 	
- 	// generate a smaller random integer (pseudo-randomly smaller)
- 	var delta = Math.floor(Math.random()*(INDIVIDUAL_SIZE - marker + 1));
- 	
- 	// generate a random string of delta chars
- 	var mutatedStream = "";
- 		
- 	for(var j=0; j < delta; j++){
- 		var randomIndex = Math.floor(Math.random()*(validChars.length + 1));
- 		mutatedStream += validChars.charAt(randomIndex);
- 	}
- 	
- 	// override mutated genes
- 	for (deltaCounter = 0; deltaCounter < delta; deltaCounter++)
-    {
-    	individual.replaceAt(marker++, mutatedStream.charAt(deltaCounter));
+var validChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.'";
+var INITIAL_POP_SIZE = 2500;
+var MAX_GENERATIONS = 50;
+var evolutionTarget = "";
+var INDIVIDUAL_SIZE = 0;
+var ELITE = INITIAL_POP_SIZE - INITIAL_POP_SIZE*5/100;
+var MUTATION_RATE = 0.156;
+var MAX_RAND = 32767.00;
+
+function evolve(currentGeneration, generationCounter, placeHolder, useImmunization, inoculationFunction){
+  var fitnessScores = new Array();
+  var tempGenerationHolder = new Array();
+
+  for(var g = 0; g < currentGeneration.length; g++){
+    fitnessScores[g] = {fitness: levenshtein(evolutionTarget, currentGeneration[g]), chromosome: currentGeneration[g]};
+  }
+
+  fitnessScores.sort(function(a, b) {
+    return a.fitness - b.fitness;
+  });
+
+  $("<div style='text-align: left;'>Best of <b>generation " + (generationCounter + 1) + "</b>: " + fitnessScores[0].chromosome + "</div>").hide().appendTo('#' + placeHolder).slideDown('slow');
+
+  if(fitnessScores[0].fitness == 0) {
+    $("<h1>" + fitnessScores[0].chromosome + "</h1>").hide().appendTo('#' + placeHolder).slideDown('slow');
+  } 
+  else if(generationCounter < MAX_GENERATIONS) {
+    for(var e = 0; e < ELITE; e++) {
+      tempGenerationHolder.push(fitnessScores[e].chromosome); 
     }
-    
-    return individual;
- }
+
+    var newPopulationCount = useImmunization ? INITIAL_POP_SIZE * 2 : INITIAL_POP_SIZE;
+    for(var s = 0; s < newPopulationCount; s++) {
+      var randInd1 = Math.floor(Math.random()*(INITIAL_POP_SIZE - ELITE));
+      var randInd2 = Math.floor(Math.random()*(INITIAL_POP_SIZE - ELITE));
+      var child = mate(fitnessScores[randInd1].chromosome, fitnessScores[randInd2].chromosome);
+      if(useImmunization) child = inoculationFunction(child);
+      tempGenerationHolder.push(child);
+    }
+
+    if(useImmunization) {
+      tempGenerationHolder.sort(function(a, b) {
+        return a.fitness - b.fitness;
+      });
+      tempGenerationHolder = tempGenerationHolder.slice(0, newPopulationCount/2 + 1);
+    }
+
+    currentGeneration = tempGenerationHolder;
+    generationCounter++;
+    setTimeout(function(){evolve(currentGeneration, generationCounter, placeHolder, useImmunization, inoculationFunction)},200);
+  }
+}
  
- // A function to generate initial population of random strings
- function generateInitialPop(sizeOfIndividual, sizeOfPopulation){
- 	
- 	var population = new Array();
- 	
- 	for(var i=0; i < sizeOfPopulation; i++)
- 	{
- 		var individual = "";
- 		
- 		for(var j=0; j < sizeOfIndividual; j++){
- 			var randomIndex = Math.floor(Math.random()*(validChars.length));
- 			
- 			if(randomIndex >= validChars.length){
- 				alert('randomIndex is ' + randomIndex);
- 			}
- 			
- 			individual += validChars.charAt(randomIndex);
- 		}
- 		
- 		if(individual.length != sizeOfIndividual){
- 				alert('size of individual is ' + individual.length + ' - ' + individual);
- 		}
- 		
- 		population.push(individual);
- 	}
- 	
- 	return population;
- }
+function mate(individual1, individual2){
+  var randomIndex1 = Math.floor(Math.random()*(INDIVIDUAL_SIZE));
+  var randomIndex2 = Math.floor(Math.random()*(INDIVIDUAL_SIZE));
+  var smaller;
+  var bigger;
+
+  if(randomIndex1 > randomIndex2) {
+    smaller = randomIndex2;
+    bigger = randomIndex1;
+  }
+  else {
+    smaller = randomIndex1;
+    bigger = randomIndex2;
+  }
+
+  var ind1_1 = individual1.substring(0,smaller);
+  var ind1_3 = individual1.substring(bigger, INDIVIDUAL_SIZE);
+  var ind2_2 = individual2.substring(smaller, bigger);
+  var offspring = ind1_1 + ind2_2 + ind1_3;
+
+  if(offspring.length != INDIVIDUAL_SIZE) {
+    alert('anomaly in offspring, lenght = ' + offspring.length + ' - ' + offspring);
+  }
+
+  if (Math.floor(Math.random()*(MAX_RAND + 1)) > MAX_RAND * MUTATION_RATE) {
+    offspring = mutate(offspring);
+  }
+
+  return offspring;
+}
+
+function mutate(individual) {
+  var marker = Math.floor(Math.random()*(INDIVIDUAL_SIZE));
+  var delta = Math.floor(Math.random()*(INDIVIDUAL_SIZE - marker + 1));
+  var mutatedStream = "";
+
+  for(var j=0; j < delta; j++) {
+    var randomIndex = Math.floor(Math.random()*(validChars.length + 1));
+    mutatedStream += validChars.charAt(randomIndex);
+  }
+
+  for (deltaCounter = 0; deltaCounter < delta; deltaCounter++) {
+    individual.replaceAt(marker++, mutatedStream.charAt(deltaCounter));
+  }
+
+  return individual;
+}
+
+function inoculateRandom(chromosome) {
+  var inoculatedChromosome = "";
+  for(var i=0; i<chromosome.length; i++) {
+    if(chromosome[i] != evolutionTarget[i]) {
+      inoculatedChromosome += generateString(1);
+    }
+    else {
+      inoculatedChromosome += chromosome[i];
+    }
+  }
+  return inoculatedChromosome;
+}
+
+function inoculateAware(chromosome) {
+  var inoculatedChromosome = "", flipped = false;
+  for(var i=0; i<chromosome.length; i++) {
+    if(chromosome[i] != evolutionTarget[i] && !flipped) {
+      inoculatedChromosome += evolutionTarget[i];
+      flipped = true;
+    }
+    else {
+      inoculatedChromosome += chromosome[i];
+    }
+  }
+  return inoculatedChromosome; 
+}
+
+function generateInitialPop(sizeOfIndividual, sizeOfPopulation) {
+  var population = new Array();
+
+  for(var i=0; i < sizeOfPopulation; i++) {
+    var individual = generateString(sizeOfIndividual);
+
+    if(individual.length != sizeOfIndividual) {
+      alert('size of individual is ' + individual.length + ' - ' + individual);
+    }
+    population.push(individual);
+  }
+
+  return population;
+}
+
+function generateString(length) {
+  var individual = "";
+  for(var i=0; i<length; i++) {
+    var randomIndex = Math.floor(Math.random()*(validChars.length));
+
+    if(randomIndex >= validChars.length) {
+      alert('randomIndex is ' + randomIndex);
+    }
+    individual += validChars.charAt(randomIndex);
+  }
+  return individual;
+}
