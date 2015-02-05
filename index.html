@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Immune genetic algorithm</title>
+      <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+      <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+      <script type="text/javascript" src="ga.js"></script>
+      <script type="text/javascript" src="levenshtein.js"></script>
+      <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+   </head>
+   <body>
+   <br>
+   <div style="text-align: center; width:50%;">
+      <form class="form-inline">
+         <input type="text" id="target" class="form-control" value="Genetic algorithm" style="width:80%" />
+      	<input id="evolveBtn" type="button" value="Start" class="btn btn-default" />
+      </form>
+   </div>
+
+   <div id="wrapper" style="text-align: center; margin-top: 25px">
+      <div class="col-md-4">
+         <h3>Without immunization</h3>
+      	<div id="evolutionPlaceHolder">
+      	</div>
+      </div>
+      <div class="col-md-4">
+         <h3>With random immunization</h3>
+         <div id="immunePlaceHolder">
+         </div>
+      </div>
+      <div class="col-md-4">
+         <h3>With aware immunization</h3>
+         <div id="immuneAwarePlaceHolder">
+         </div>
+      </div>
+   </div>
+   </body>
+   <script type="text/javascript">
+       var convertInfidelsHndlr = function(){
+         // clean output area
+         $('#evolutionPlaceHolder').html('');
+         $('#immunePlaceHolder').html('');
+         $('#immuneAwarePlaceHolder').html('');
+         evolutionTarget = $("#target").val();
+         INDIVIDUAL_SIZE = $("#target").val().length;
+
+         // generate initial population of random strings
+         var initialPopulation = generateInitialPop(INDIVIDUAL_SIZE, INITIAL_POP_SIZE);         
+         var currentGeneration = initialPopulation;
+         
+         var maxFitness = 0;
+         var generationCounter = 0;
+         
+         evolve(currentGeneration, generationCounter, 'evolutionPlaceHolder');
+         evolve(currentGeneration, generationCounter, 'immunePlaceHolder', true, inoculateRandom);
+         evolve(currentGeneration, generationCounter, 'immuneAwarePlaceHolder', true, inoculateAware);
+         
+         return 0;
+       }
+       
+       $(document).ready(function(){
+         $('#evolveBtn').click(convertInfidelsHndlr);
+       });
+      </script>
+</html>
