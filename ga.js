@@ -11,12 +11,12 @@ var ELITE = INITIAL_POP_SIZE - INITIAL_POP_SIZE*5/100;
 var MUTATION_RATE = 0.156;
 var MAX_RAND = 32767.00;
 
-function evolve(currentGeneration, generationCounter, placeHolder, useImmunization, inoculationFunction){
-  var fitnessScores = new Array();
-  var tempGenerationHolder = new Array();
+function evolve(currentGeneration, generationCounter, placeHolder, useImmunization, inoculationFunction) {
+  var fitnessScores = [];
+  var tempGenerationHolder = [];
 
-  for(var g = 0; g < currentGeneration.length; g++){
-    fitnessScores[g] = {fitness: levenshtein(evolutionTarget, currentGeneration[g]), chromosome: currentGeneration[g]};
+  for(var i= 0; i<currentGeneration.length; i++) {
+    fitnessScores[i] = {fitness: levenshtein(evolutionTarget, currentGeneration[i]), chromosome: currentGeneration[i]};
   }
 
   fitnessScores.sort(function(a, b) {
@@ -25,37 +25,41 @@ function evolve(currentGeneration, generationCounter, placeHolder, useImmunizati
 
   $("<div style='text-align: left;'>Best of <b>generation " + (generationCounter + 1) + "</b>: " + fitnessScores[0].chromosome + "</div>").hide().appendTo('#' + placeHolder).slideDown('slow');
 
-  if(fitnessScores[0].fitness == 0) {
-    $("<h1>" + fitnessScores[0].chromosome + "</h1>").hide().appendTo('#' + placeHolder).slideDown('slow');
-  } 
-  else if(generationCounter < MAX_GENERATIONS) {
-    for(var e = 0; e < ELITE; e++) {
-      tempGenerationHolder.push(fitnessScores[e].chromosome); 
+  if(fitnessScores[0].fitness != 0 && generationCounter < MAX_GENERATIONS) {
+    for(var i=0; i<ELITE; i++) {
+      tempGenerationHolder.push({fitness: levenshtein(evolutionTarget, fitnessScores[i].chromosome), chromosome: fitnessScores[i].chromosome}); 
     }
 
     var newPopulationCount = useImmunization ? INITIAL_POP_SIZE * 2 : INITIAL_POP_SIZE;
-    for(var s = 0; s < newPopulationCount; s++) {
-      var randInd1 = Math.floor(Math.random()*(INITIAL_POP_SIZE - ELITE));
-      var randInd2 = Math.floor(Math.random()*(INITIAL_POP_SIZE - ELITE));
+    for(var i=0; i<newPopulationCount; i++) {
+      var randInd1 = Math.floor(Math.random()*(INITIAL_POP_SIZE));
+      var randInd2 = Math.floor(Math.random()*(INITIAL_POP_SIZE));
       var child = mate(fitnessScores[randInd1].chromosome, fitnessScores[randInd2].chromosome);
       if(useImmunization) child = inoculationFunction(child);
-      tempGenerationHolder.push(child);
+      tempGenerationHolder.push({fitness: levenshtein(evolutionTarget, child), chromosome: child});
     }
 
+    tempGenerationHolder.sort(function(a, b) {
+      return a.fitness - b.fitness;
+    });
+
     if(useImmunization) {
-      tempGenerationHolder.sort(function(a, b) {
-        return a.fitness - b.fitness;
-      });
       tempGenerationHolder = tempGenerationHolder.slice(0, newPopulationCount/2 + 1);
     }
 
+    tempGenerationHolder = tempGenerationHolder.map(function(individual) {
+      return individual.chromosome;
+    });
+
     currentGeneration = tempGenerationHolder;
     generationCounter++;
-    setTimeout(function(){evolve(currentGeneration, generationCounter, placeHolder, useImmunization, inoculationFunction)},200);
+    setTimeout(function() {
+      evolve(currentGeneration, generationCounter, placeHolder, useImmunization, inoculationFunction)
+    }, 100);
   }
 }
  
-function mate(individual1, individual2){
+function mate(individual1, individual2) {
   var randomIndex1 = Math.floor(Math.random()*(INDIVIDUAL_SIZE));
   var randomIndex2 = Math.floor(Math.random()*(INDIVIDUAL_SIZE));
   var smaller;
@@ -91,13 +95,13 @@ function mutate(individual) {
   var delta = Math.floor(Math.random()*(INDIVIDUAL_SIZE - marker + 1));
   var mutatedStream = "";
 
-  for(var j=0; j < delta; j++) {
+  for(var i=0; i<delta; i++) {
     var randomIndex = Math.floor(Math.random()*(validChars.length + 1));
     mutatedStream += validChars.charAt(randomIndex);
   }
 
-  for (deltaCounter = 0; deltaCounter < delta; deltaCounter++) {
-    individual.replaceAt(marker++, mutatedStream.charAt(deltaCounter));
+  for (var i=0; i<delta; i++) {
+    individual.replaceAt(marker++, mutatedStream.charAt(i));
   }
 
   return individual;
@@ -133,7 +137,7 @@ function inoculateAware(chromosome) {
 function generateInitialPop(sizeOfIndividual, sizeOfPopulation) {
   var population = new Array();
 
-  for(var i=0; i < sizeOfPopulation; i++) {
+  for(var i=0; i<sizeOfPopulation; i++) {
     var individual = generateString(sizeOfIndividual);
 
     if(individual.length != sizeOfIndividual) {
